@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Assignment 0 — Vectors</title>
+  <meta charset="utf-8" />
+  <title>CSE 160 Assignment 0 — Vectors (Ch. 2 canvas basis)</title>
+  <!--
+    WebGL Programming Guide (Matsuda & Lea), Chapter 2 — “Your First Step with WebGL”
+    Examples and downloads: https://sites.google.com/site/webglbook
+    This page extends Listing 2.1 (DrawRectangle): same canvas setup + cuon-matrix-cse160.js per course.
+  -->
 </head>
 <body onload="main()">
-  <canvas id="canvas" width="400" height="400"></canvas>
+  <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports the canvas element.
+  </canvas>
   <div style="margin-top: 8px;">
     <label>v1: x <input type="text" id="v1x" value="0" size="6"></label>
     <label> y <input type="text" id="v1y" value="7" size="6"></label>
