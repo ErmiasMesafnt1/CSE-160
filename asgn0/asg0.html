@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Assignment 0 — Vectors</title>
+</head>
+<body onload="main()">
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <div style="margin-top: 8px;">
+    <label>v1: x <input type="text" id="v1x" value="0" size="6"></label>
+    <label> y <input type="text" id="v1y" value="7" size="6"></label>
+  </div>
+  <div>
+    <label>v2: x <input type="text" id="v2x" value="5" size="6"></label>
+    <label> y <input type="text" id="v2y" value="0" size="6"></label>
+  </div>
+  <div>
+    <button type="button" id="drawVectorsBtn">Draw</button>
+  </div>
+  <div style="margin-top: 12px;">
+    <label>Operation
+      <select id="operation">
+        <option value="add">Add</option>
+        <option value="subtract">Subtract</option>
+        <option value="multiply">Multiply</option>
+        <option value="divide">Divide</option>
+        <option value="magnitude">Magnitude</option>
+        <option value="normalize">Normalize</option>
+        <option value="angle">Angle Between</option>
+        <option value="area">Area</option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <label>Scalar: <input type="text" id="scalar" value="1" size="6"></label>
+  </div>
+  <div>
+    <button type="button" id="drawOperationBtn">Draw</button>
+  </div>
+
+  <script src="lib/cuon-matrix-cse160.js"></script>
+  <script src="asg0.js"></script>
+</body>
+</html>
