@@ -1,13 +1,3 @@
-// CSE 160 Assignment 0 — 2D vector drawing on canvas
-//
-// Based on Listing 2.1 (DrawRectangle) in:
-//   WebGL Programming Guide (Kouichi Matsuda & Rodger Lea)
-//   Chapter 2: Your First Step with WebGL — 2D canvas context
-// Book site (examples & downloads): https://sites.google.com/site/webglbook
-//
-// Listing 2.1 used: getElementById('webgl'), getContext('2d'), and a blue fillRect.
-// Assignment 2+ replaces that with a black canvas and vectors drawn with lineTo.
-
 var canvas;
 var ctx;
 var VECTOR_DRAW_SCALE = 20;
