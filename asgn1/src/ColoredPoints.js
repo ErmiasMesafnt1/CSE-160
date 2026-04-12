@@ -153,15 +153,16 @@ function setDrawMode(mode) {
 }
 
 function buildPictureTriangles() {
-  var sky = [0.2, 0.45, 0.85, 1.0];
-  var grass = [0.15, 0.55, 0.2, 1.0];
-  var house = [0.75, 0.55, 0.35, 1.0];
-  var roof = [0.55, 0.2, 0.15, 1.0];
-  var door = [0.35, 0.2, 0.1, 1.0];
-  var pane = [0.75, 0.85, 0.95, 1.0];
-  var trunk = [0.35, 0.22, 0.12, 1.0];
-  var leaf = [0.1, 0.45, 0.15, 1.0];
-  var sun = [1.0, 0.92, 0.2, 1.0];
+  var cream = [0.98, 0.96, 0.9, 1.0];
+  var land = [0.78, 0.9, 0.68, 1.0];
+  var landEdge = [0.22, 0.52, 0.28, 1.0];
+  var water = [0.72, 0.88, 0.98, 1.0];
+  var waterEdge = [0.25, 0.58, 0.95, 1.0];
+  var redB = [0.92, 0.22, 0.18, 1.0];
+  var orangeB = [0.98, 0.55, 0.2, 1.0];
+  var brownBar = [0.32, 0.2, 0.1, 1.0];
+  var fishBody = [0.88, 0.87, 0.85, 1.0];
+  var fishOrange = [0.95, 0.5, 0.15, 1.0];
 
   var T = function (xa, ya, xb, yb, xc, yc, col) {
     return {
@@ -174,40 +175,50 @@ function buildPictureTriangles() {
   };
 
   var out = [];
+  var yWater = 0.14;
 
-  out.push(T(-1, 0.15, 1, 0.15, 1, 1, sky));
-  out.push(T(-1, 0.15, 1, 1, -1, 1, sky));
+  out.push(T(-1, -1, 1, -1, 1, yWater, water));
+  out.push(T(-1, -1, 1, yWater, -1, yWater, water));
 
-  out.push(T(-1, -1, 1, -1, 1, 0.15, grass));
-  out.push(T(-1, -1, 1, 0.15, -1, 0.15, grass));
+  out.push(T(-1, yWater, 1, yWater, 1, 1, cream));
+  out.push(T(-1, yWater, 1, 1, -1, 1, cream));
 
-  out.push(T(-0.35, -0.25, 0.35, -0.25, 0.35, 0.25, house));
-  out.push(T(-0.35, -0.25, 0.35, 0.25, -0.35, 0.25, house));
+  out.push(T(-1, yWater, -0.4, yWater, -0.36, 0.8, land));
+  out.push(T(-1, yWater, -0.36, 0.8, -1, 0.66, land));
 
-  out.push(T(-0.4, 0.25, 0, 0.55, 0.4, 0.25, roof));
-  out.push(T(-0.4, 0.25, 0.4, 0.25, 0, 0.55, roof));
+  out.push(T(1, yWater, 0.4, yWater, 0.36, 0.8, land));
+  out.push(T(1, yWater, 0.36, 0.8, 1, 0.66, land));
 
-  out.push(T(-0.06, -0.25, 0.06, -0.25, 0.06, -0.02, door));
-  out.push(T(-0.06, -0.25, 0.06, -0.02, -0.06, -0.02, door));
+  var yBase = 0.6;
+  var yTop = 0.86;
+  out.push(T(-0.52, yBase, -0.26, yBase, -0.39, yTop, redB));
+  out.push(T(-0.26, yBase, 0, yBase, -0.13, yTop, orangeB));
+  out.push(T(0, yBase, 0.26, yBase, 0.13, yTop, orangeB));
+  out.push(T(0.26, yBase, 0.52, yBase, 0.39, yTop, redB));
 
-  out.push(T(-0.28, 0.02, -0.14, 0.02, -0.14, 0.14, pane));
-  out.push(T(-0.28, 0.02, -0.14, 0.14, -0.28, 0.14, pane));
+  var yBarLo = 0.565;
+  var yBarHi = 0.605;
+  out.push(T(-0.55, yBarLo, 0.55, yBarLo, 0.55, yBarHi, brownBar));
+  out.push(T(-0.55, yBarLo, 0.55, yBarHi, -0.55, yBarHi, brownBar));
 
-  out.push(T(0.14, 0.02, 0.28, 0.02, 0.28, 0.14, pane));
-  out.push(T(0.14, 0.02, 0.28, 0.14, 0.14, 0.14, pane));
+  out.push(T(-1, yWater, 1, yWater, 1, yWater + 0.028, waterEdge));
+  out.push(T(-1, yWater, 1, yWater + 0.028, -1, yWater + 0.028, waterEdge));
 
-  out.push(T(0.62, -0.35, 0.68, -0.35, 0.68, 0.05, trunk));
-  out.push(T(0.62, -0.35, 0.68, 0.05, 0.62, 0.05, trunk));
+  out.push(T(-1, yWater, -1, 0.66, -0.982, 0.66, landEdge));
+  out.push(T(-1, yWater, -0.982, 0.66, -0.982, yWater, landEdge));
+  out.push(T(1, yWater, 1, 0.66, 0.982, 0.66, landEdge));
+  out.push(T(1, yWater, 0.982, 0.66, 0.982, yWater, landEdge));
 
-  out.push(T(0.65, 0.05, 0.82, 0.12, 0.65, 0.22, leaf));
-  out.push(T(0.65, 0.22, 0.82, 0.12, 0.82, 0.28, leaf));
-  out.push(T(0.48, 0.12, 0.65, 0.05, 0.58, 0.24, leaf));
-  out.push(T(0.58, 0.24, 0.65, 0.05, 0.72, 0.18, leaf));
-  out.push(T(0.58, 0.24, 0.72, 0.18, 0.65, 0.32, leaf));
+  var fx = 0.02;
+  var fy = -0.42;
+  var s = 0.075;
+  out.push(T(fx - s, fy - s, fx + s, fy - s, fx + s, fy + s, fishBody));
+  out.push(T(fx - s, fy - s, fx + s, fy + s, fx - s, fy + s, fishBody));
 
-  out.push(T(-0.75, 0.55, -0.55, 0.55, -0.65, 0.72, sun));
-  out.push(T(-0.75, 0.55, -0.65, 0.72, -0.85, 0.68, sun));
-  out.push(T(-0.55, 0.55, -0.65, 0.72, -0.58, 0.62, sun));
+  out.push(T(fx + s, fy + s * 0.15, fx + s + 0.14, fy + s * 0.55, fx + s + 0.14, fy - s * 0.55, fishOrange));
+
+  out.push(T(fx - s * 0.2, fy + s, fx + s * 0.2, fy + s, fx, fy + s + 0.1, fishOrange));
+  out.push(T(fx - s * 0.2, fy - s, fx + s * 0.2, fy - s, fx, fy - s - 0.1, fishOrange));
 
   return out;
 }
