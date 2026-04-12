@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Change a point color</title>
+</head>
+<body onload="main()">
+  <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
+
+  <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+  </canvas>
+  <p></p>
+  <p id="numdot">0</p>
+
+  <p>
+    <button type="button" id="green">Green</button>
+    <button type="button" id="red">Red</button>
+    <button type="button" id="clearButton">Clear</button>
+  </p>
+
+  <p>
+    <button type="button" id="modeSquares">Squares</button>
+    <button type="button" id="modeTriangles">Triangles</button>
+    <button type="button" id="modeCircles">Circles</button>
+  </p>
+
+  <p>
+    Red <input type="range" min="0" max="100" value="100" class="slider" id="redSlide">
+  </p>
+  <p>
+    Green <input type="range" min="0" max="100" value="0" class="slider" id="greenSlide">
+  </p>
+  <p>
+    Blue <input type="range" min="0" max="100" value="0" class="slider" id="blueSlide">
+  </p>
+  <p>
+    Size <input type="range" min="5" max="40" value="5" class="slider" id="sizeSlide">
+  </p>
+  <p>
+    Circle segments <input type="range" min="3" max="64" value="20" class="slider" id="segmentsSlide">
+  </p>
+
+  <p>
+    <button type="button" id="drawPictureBtn">Draw picture</button>
+    <button type="button" id="undoBtn">Undo</button>
+  </p>
+  <p><strong>Awesomeness:</strong> Undo removes only the last painted shape (square / triangle / circle stroke). It does not remove the scene from Draw picture or clear the whole canvas — use Clear for that.</p>
+
+  <p>
+    <img src="../assets/reference-sketch.jpg" alt="Add reference-sketch.jpg in asgn1/assets/" width="220" />
+  </p>
+
+  <script src="../lib/webgl-utils.js"></script>
+  <script src="../lib/cuon-utils.js"></script>
+  <script src="Triangle.js"></script>
+  <script src="Point.js"></script>
+  <script src="Circle.js"></script>
+  <script src="ColoredPoints.js"></script>
+</body>
+</html>
