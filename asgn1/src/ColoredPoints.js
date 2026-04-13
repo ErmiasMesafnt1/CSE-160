@@ -163,6 +163,7 @@ function buildPictureTriangles() {
   var brownBar = [0.32, 0.2, 0.1, 1.0];
   var fishBody = [0.88, 0.87, 0.85, 1.0];
   var fishOrange = [0.95, 0.5, 0.15, 1.0];
+  var ink = [0.07, 0.07, 0.07, 1.0];
 
   var T = function (xa, ya, xb, yb, xc, yc, col) {
     return {
@@ -173,6 +174,32 @@ function buildPictureTriangles() {
       }
     };
   };
+
+  function addRect(olist, x, y, w, h, col) {
+    olist.push(T(x, y, x + w, y, x + w, y + h, col));
+    olist.push(T(x, y, x + w, y + h, x, y + h, col));
+  }
+
+  function addThickLine(olist, x0, y0, x1, y1, t, col) {
+    var dx = x1 - x0;
+    var dy = y1 - y0;
+    var len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 1e-8) {
+      return;
+    }
+    var nx = (-dy / len) * (0.5 * t);
+    var ny = (dx / len) * (0.5 * t);
+    var ax = x0 + nx;
+    var ay = y0 + ny;
+    var bx = x0 - nx;
+    var by = y0 - ny;
+    var cx = x1 - nx;
+    var cy = y1 - ny;
+    var dx2 = x1 + nx;
+    var dy2 = y1 + ny;
+    olist.push(T(ax, ay, bx, by, cx, cy, col));
+    olist.push(T(ax, ay, cx, cy, dx2, dy2, col));
+  }
 
   var out = [];
   var yWater = 0.14;
@@ -195,6 +222,25 @@ function buildPictureTriangles() {
   out.push(T(-0.26, yBase, 0, yBase, -0.13, yTop, orangeB));
   out.push(T(0, yBase, 0.26, yBase, 0.13, yTop, orangeB));
   out.push(T(0.26, yBase, 0.52, yBase, 0.39, yTop, redB));
+
+  var ex = -0.498;
+  var ey = 0.642;
+  var letterW = 0.052;
+  var letterH = 0.098;
+  var stroke = 0.0135;
+  var gap = 0.012;
+  var mx = ex + letterW + gap;
+  var my = ey;
+
+  addRect(out, ex, ey, stroke, letterH, ink);
+  addRect(out, ex, ey + letterH - stroke, letterW, stroke, ink);
+  addRect(out, ex, ey + letterH * 0.5 - stroke * 0.5, letterW * 0.72, stroke, ink);
+  addRect(out, ex, ey, letterW, stroke, ink);
+
+  addRect(out, mx, my, stroke, letterH, ink);
+  addRect(out, mx + letterW - stroke, my, stroke, letterH, ink);
+  addThickLine(out, mx + stroke, my + letterH, mx + letterW * 0.5, my + letterH * 0.34, stroke, ink);
+  addThickLine(out, mx + letterW - stroke, my + letterH, mx + letterW * 0.5, my + letterH * 0.34, stroke, ink);
 
   var yBarLo = 0.565;
   var yBarHi = 0.605;
