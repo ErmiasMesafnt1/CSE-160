@@ -161,8 +161,6 @@ function buildPictureTriangles() {
   var redB = [0.92, 0.22, 0.18, 1.0];
   var orangeB = [0.98, 0.55, 0.2, 1.0];
   var brownBar = [0.32, 0.2, 0.1, 1.0];
-  var fishBody = [0.88, 0.87, 0.85, 1.0];
-  var fishOrange = [0.95, 0.5, 0.15, 1.0];
   var ink = [0.07, 0.07, 0.07, 1.0];
 
   var T = function (xa, ya, xb, yb, xc, yc, col) {
@@ -210,75 +208,59 @@ function buildPictureTriangles() {
   out.push(T(-1, yWater, 1, yWater, 1, 1, cream));
   out.push(T(-1, yWater, 1, 1, -1, 1, cream));
 
-  out.push(T(-1, yWater, -0.4, yWater, -0.36, 0.8, land));
-  out.push(T(-1, yWater, -0.36, 0.8, -1, 0.66, land));
+  out.push(T(-1, yWater, -0.38, yWater, -0.32, 0.46, land));
+  out.push(T(-1, yWater, -0.32, 0.46, -1, 0.52, land));
 
-  out.push(T(1, yWater, 0.4, yWater, 0.36, 0.8, land));
-  out.push(T(1, yWater, 0.36, 0.8, 1, 0.66, land));
+  out.push(T(1, yWater, 0.38, yWater, 0.32, 0.46, land));
+  out.push(T(1, yWater, 0.32, 0.46, 1, 0.52, land));
 
-  var yDeckBot = 0.552;
-  var yDeckTop = 0.622;
-  var xDeckL = -0.52;
-  var xDeckR = 0.52;
+  var yDeckBot = 0.498;
+  var yDeckTop = 0.558;
+  var xDeckL = -0.5;
+  var xDeckR = 0.5;
   addRect(out, xDeckL, yDeckBot, xDeckR - xDeckL, yDeckTop - yDeckBot, brownBar);
 
-  var xb = [-0.5, -0.26, -0.02, 0.22, 0.46];
-  var yApex = [0.87, 0.735, 0.87, 0.735];
+  var xb = [-0.46, -0.23, 0.0, 0.23, 0.46];
+  var yApexHi = 0.788;
   var trussCol = [redB, orangeB, orangeB, redB];
   var mids = [];
   var ti;
   for (ti = 0; ti < 4; ti++) {
     mids[ti] = (xb[ti] + xb[ti + 1]) * 0.5;
     out.push(
-      T(xb[ti], yDeckTop, xb[ti + 1], yDeckTop, mids[ti], yApex[ti], trussCol[ti])
+      T(xb[ti], yDeckTop, xb[ti + 1], yDeckTop, mids[ti], yApexHi, trussCol[ti])
     );
   }
 
-  var ex = -0.482;
-  var ey = 0.632;
-  var letterW = 0.048;
-  var letterH = 0.088;
-  var strokeE = 0.0125;
+  var ex = -0.448;
+  var ey = 0.568;
+  var letterW = 0.044;
+  var letterH = 0.078;
+  var strokeE = 0.0115;
 
   addRect(out, ex, ey, strokeE, letterH, ink);
   addRect(out, ex, ey + letterH - strokeE, letterW, strokeE, ink);
-  addRect(out, ex, ey + letterH * 0.5 - strokeE * 0.5, letterW * 0.7, strokeE, ink);
+  addRect(out, ex, ey + letterH * 0.5 - strokeE * 0.5, letterW * 0.68, strokeE, ink);
   addRect(out, ex, ey, letterW, strokeE, ink);
 
-  var strokeM = 0.0135;
-  var yTopM = 0.88;
-  var lx = -0.498;
-  var rx = 0.492;
-  addRect(out, lx, yDeckTop, strokeM, yTopM - yDeckTop, ink);
-  addRect(out, rx - strokeM, yDeckTop, strokeM, yTopM - yDeckTop, ink);
+  var strokeM = 0.0125;
+  var inset = 0.018;
+  addThickLine(out, xb[0] + inset, yDeckTop, mids[0], yApexHi, strokeM, ink);
+  addThickLine(out, mids[0], yApexHi, xb[1], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[1], yDeckTop, mids[1], yApexHi, strokeM, ink);
+  addThickLine(out, mids[1], yApexHi, xb[2], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[2], yDeckTop, mids[2], yApexHi, strokeM, ink);
+  addThickLine(out, mids[2], yApexHi, xb[3], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[3], yDeckTop, mids[3], yApexHi, strokeM, ink);
+  addThickLine(out, mids[3], yApexHi, xb[4] - inset, yDeckTop, strokeM, ink);
 
-  addThickLine(out, lx + strokeM, yTopM, mids[0], yApex[0], strokeM, ink);
-  addThickLine(out, mids[0], yApex[0], xb[1], yDeckTop, strokeM, ink);
-  addThickLine(out, xb[1], yDeckTop, mids[1], yApex[1], strokeM, ink);
-  addThickLine(out, mids[1], yApex[1], xb[2], yDeckTop, strokeM, ink);
-  addThickLine(out, xb[2], yDeckTop, mids[2], yApex[2], strokeM, ink);
-  addThickLine(out, mids[2], yApex[2], xb[3], yDeckTop, strokeM, ink);
-  addThickLine(out, xb[3], yDeckTop, mids[3], yApex[3], strokeM, ink);
-  addThickLine(out, mids[3], yApex[3], rx - strokeM, yTopM, strokeM, ink);
+  out.push(T(-1, yWater, 1, yWater, 1, yWater + 0.022, waterEdge));
+  out.push(T(-1, yWater, 1, yWater + 0.022, -1, yWater + 0.022, waterEdge));
 
-  out.push(T(-1, yWater, 1, yWater, 1, yWater + 0.028, waterEdge));
-  out.push(T(-1, yWater, 1, yWater + 0.028, -1, yWater + 0.028, waterEdge));
-
-  out.push(T(-1, yWater, -1, 0.66, -0.982, 0.66, landEdge));
-  out.push(T(-1, yWater, -0.982, 0.66, -0.982, yWater, landEdge));
-  out.push(T(1, yWater, 1, 0.66, 0.982, 0.66, landEdge));
-  out.push(T(1, yWater, 0.982, 0.66, 0.982, yWater, landEdge));
-
-  var fx = 0.02;
-  var fy = -0.42;
-  var s = 0.075;
-  out.push(T(fx - s, fy - s, fx + s, fy - s, fx + s, fy + s, fishBody));
-  out.push(T(fx - s, fy - s, fx + s, fy + s, fx - s, fy + s, fishBody));
-
-  out.push(T(fx + s, fy + s * 0.15, fx + s + 0.14, fy + s * 0.55, fx + s + 0.14, fy - s * 0.55, fishOrange));
-
-  out.push(T(fx - s * 0.2, fy + s, fx + s * 0.2, fy + s, fx, fy + s + 0.1, fishOrange));
-  out.push(T(fx - s * 0.2, fy - s, fx + s * 0.2, fy - s, fx, fy - s - 0.1, fishOrange));
+  out.push(T(-1, yWater, -1, 0.52, -0.985, 0.52, landEdge));
+  out.push(T(-1, yWater, -0.985, 0.52, -0.985, yWater, landEdge));
+  out.push(T(1, yWater, 1, 0.52, 0.985, 0.52, landEdge));
+  out.push(T(1, yWater, 0.985, 0.52, 0.985, yWater, landEdge));
 
   return out;
 }
