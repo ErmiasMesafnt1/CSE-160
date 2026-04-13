@@ -216,36 +216,50 @@ function buildPictureTriangles() {
   out.push(T(1, yWater, 0.4, yWater, 0.36, 0.8, land));
   out.push(T(1, yWater, 0.36, 0.8, 1, 0.66, land));
 
-  var yBase = 0.6;
-  var yTop = 0.86;
-  out.push(T(-0.52, yBase, -0.26, yBase, -0.39, yTop, redB));
-  out.push(T(-0.26, yBase, 0, yBase, -0.13, yTop, orangeB));
-  out.push(T(0, yBase, 0.26, yBase, 0.13, yTop, orangeB));
-  out.push(T(0.26, yBase, 0.52, yBase, 0.39, yTop, redB));
+  var yDeckBot = 0.552;
+  var yDeckTop = 0.622;
+  var xDeckL = -0.52;
+  var xDeckR = 0.52;
+  addRect(out, xDeckL, yDeckBot, xDeckR - xDeckL, yDeckTop - yDeckBot, brownBar);
 
-  var ex = -0.498;
-  var ey = 0.642;
-  var letterW = 0.052;
-  var letterH = 0.098;
-  var stroke = 0.0135;
-  var gap = 0.012;
-  var mx = ex + letterW + gap;
-  var my = ey;
+  var xb = [-0.5, -0.26, -0.02, 0.22, 0.46];
+  var yApex = [0.87, 0.735, 0.87, 0.735];
+  var trussCol = [redB, orangeB, orangeB, redB];
+  var mids = [];
+  var ti;
+  for (ti = 0; ti < 4; ti++) {
+    mids[ti] = (xb[ti] + xb[ti + 1]) * 0.5;
+    out.push(
+      T(xb[ti], yDeckTop, xb[ti + 1], yDeckTop, mids[ti], yApex[ti], trussCol[ti])
+    );
+  }
 
-  addRect(out, ex, ey, stroke, letterH, ink);
-  addRect(out, ex, ey + letterH - stroke, letterW, stroke, ink);
-  addRect(out, ex, ey + letterH * 0.5 - stroke * 0.5, letterW * 0.72, stroke, ink);
-  addRect(out, ex, ey, letterW, stroke, ink);
+  var ex = -0.482;
+  var ey = 0.632;
+  var letterW = 0.048;
+  var letterH = 0.088;
+  var strokeE = 0.0125;
 
-  addRect(out, mx, my, stroke, letterH, ink);
-  addRect(out, mx + letterW - stroke, my, stroke, letterH, ink);
-  addThickLine(out, mx + stroke, my + letterH, mx + letterW * 0.5, my + letterH * 0.34, stroke, ink);
-  addThickLine(out, mx + letterW - stroke, my + letterH, mx + letterW * 0.5, my + letterH * 0.34, stroke, ink);
+  addRect(out, ex, ey, strokeE, letterH, ink);
+  addRect(out, ex, ey + letterH - strokeE, letterW, strokeE, ink);
+  addRect(out, ex, ey + letterH * 0.5 - strokeE * 0.5, letterW * 0.7, strokeE, ink);
+  addRect(out, ex, ey, letterW, strokeE, ink);
 
-  var yBarLo = 0.565;
-  var yBarHi = 0.605;
-  out.push(T(-0.55, yBarLo, 0.55, yBarLo, 0.55, yBarHi, brownBar));
-  out.push(T(-0.55, yBarLo, 0.55, yBarHi, -0.55, yBarHi, brownBar));
+  var strokeM = 0.0135;
+  var yTopM = 0.88;
+  var lx = -0.498;
+  var rx = 0.492;
+  addRect(out, lx, yDeckTop, strokeM, yTopM - yDeckTop, ink);
+  addRect(out, rx - strokeM, yDeckTop, strokeM, yTopM - yDeckTop, ink);
+
+  addThickLine(out, lx + strokeM, yTopM, mids[0], yApex[0], strokeM, ink);
+  addThickLine(out, mids[0], yApex[0], xb[1], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[1], yDeckTop, mids[1], yApex[1], strokeM, ink);
+  addThickLine(out, mids[1], yApex[1], xb[2], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[2], yDeckTop, mids[2], yApex[2], strokeM, ink);
+  addThickLine(out, mids[2], yApex[2], xb[3], yDeckTop, strokeM, ink);
+  addThickLine(out, xb[3], yDeckTop, mids[3], yApex[3], strokeM, ink);
+  addThickLine(out, mids[3], yApex[3], rx - strokeM, yTopM, strokeM, ink);
 
   out.push(T(-1, yWater, 1, yWater, 1, yWater + 0.028, waterEdge));
   out.push(T(-1, yWater, 1, yWater + 0.028, -1, yWater + 0.028, waterEdge));
