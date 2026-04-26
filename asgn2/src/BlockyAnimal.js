@@ -291,7 +291,8 @@ function renderHorse() {
 
 function renderGround() {
   var ground = new Matrix4();
-  ground.translate(0, -0.05, 0);
+  // Place the ground so hooves sit on top instead of clipping through.
+  ground.translate(0, -1.15, 0);
   ground.scale(12, 0.1, 12);
   drawCube(ground, [0.28, 0.48, 0.28, 1.0]);
 }
