@@ -273,14 +273,18 @@ function renderHorse() {
   var tailJoint = matrixCopy(torsoFrame);
   tailJoint.translate(-1.06, 0.24, 0);
   tailJoint.rotate(-45 + effectiveAngle('tail'), 0, 0, 1);
-  var tailSeg1 = matrixCopy(tailJoint);
+  var tailSeg1Joint = matrixCopy(tailJoint);
+  var tailSeg1 = matrixCopy(tailSeg1Joint);
   tailSeg1.translate(-0.2, -0.18, 0);
   tailSeg1.scale(0.16, 0.5, 0.16);
   drawCube(tailSeg1, maneColor);
 
-  var tailSeg2 = matrixCopy(tailJoint);
-  tailSeg2.translate(-0.45, -0.43, 0);
-  tailSeg2.rotate(20, 0, 0, 1);
+  // Attach segment 2 at the end of segment 1 in the same local frame.
+  var tailSeg2Joint = matrixCopy(tailSeg1Joint);
+  tailSeg2Joint.translate(-0.38, -0.36, 0);
+  tailSeg2Joint.rotate(20, 0, 0, 1);
+  var tailSeg2 = matrixCopy(tailSeg2Joint);
+  tailSeg2.translate(-0.12, -0.22, 0);
   tailSeg2.scale(0.14, 0.42, 0.14);
   drawCube(tailSeg2, [0.15, 0.11, 0.09, 1.0]);
 
