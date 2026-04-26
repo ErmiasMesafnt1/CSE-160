@@ -14,11 +14,13 @@
 </head>
 <body onload="main()">
   <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
-  <p><strong>Animal:</strong> Horse. Shift-click canvas for poke animation. Drag mouse to rotate.</p>
+  <p><strong>Notes to Grader:</strong> Horse, Shift Click for poke</p>
 
   <canvas id="webgl" width="700" height="500">
     Please use a browser that supports "canvas"
   </canvas>
+
+  <div id="stats">fps: -- | ms: --</div>
 
   <div id="buttons">
     <button type="button" id="animOnBtn">Animation On</button>
@@ -27,7 +29,6 @@
   </div>
 
   <div id="controls"></div>
-  <div id="stats">fps: -- | ms: --</div>
 
   <script src="../lib/webgl-utils.js"></script>
   <script src="../lib/cuon-utils.js"></script>
