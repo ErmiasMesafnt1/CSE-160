@@ -188,7 +188,8 @@ function effectiveAngle(key) {
 function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKey) {
   var upper = matrixCopy(baseMatrix);
   upper.translate(sideOffset, -0.35, frontOffset);
-  upper.rotate(effectiveAngle(upperKey), 1, 0, 0);
+  // Swing leg in the horse's forward/back plane.
+  upper.rotate(effectiveAngle(upperKey), 0, 0, 1);
   var upperJoint = matrixCopy(upper);
   var upperShape = matrixCopy(upper);
   upperShape.translate(0, -0.32, 0);
@@ -197,7 +198,7 @@ function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKe
 
   var lower = matrixCopy(upperJoint);
   lower.translate(0, -0.64, 0);
-  lower.rotate(effectiveAngle(lowerKey), 1, 0, 0);
+  lower.rotate(effectiveAngle(lowerKey), 0, 0, 1);
   var lowerJoint = matrixCopy(lower);
   var lowerShape = matrixCopy(lower);
   lowerShape.translate(0, -0.28, 0);
@@ -206,7 +207,7 @@ function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKe
 
   var hoof = matrixCopy(lowerJoint);
   hoof.translate(0, -0.56, 0.02);
-  hoof.rotate(effectiveAngle(hoofKey), 1, 0, 0);
+  hoof.rotate(effectiveAngle(hoofKey), 0, 0, 1);
   var hoofShape = matrixCopy(hoof);
   hoofShape.translate(0, -0.08, 0.06);
   hoofShape.scale(0.2, 0.16, 0.3);
