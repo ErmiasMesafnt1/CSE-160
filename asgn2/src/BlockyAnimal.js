@@ -193,8 +193,8 @@ function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKe
   var upperJoint = matrixCopy(upper);
   var upperShape = matrixCopy(upper);
   upperShape.translate(0, -0.32, 0);
-  // Visual orientation tweak: rotate leg mesh left 90 degrees.
-  upperShape.rotate(90, 0, 1, 0);
+  // Flip leg mesh to the opposite side.
+  upperShape.rotate(-90, 0, 1, 0);
   upperShape.scale(0.23, 0.64, 0.23);
   drawCube(upperShape, [0.56, 0.34, 0.20, 1.0]);
 
@@ -204,7 +204,7 @@ function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKe
   var lowerJoint = matrixCopy(lower);
   var lowerShape = matrixCopy(lower);
   lowerShape.translate(0, -0.28, 0);
-  lowerShape.rotate(90, 0, 1, 0);
+  lowerShape.rotate(-90, 0, 1, 0);
   lowerShape.scale(0.18, 0.56, 0.18);
   drawCube(lowerShape, [0.50, 0.30, 0.18, 1.0]);
 
@@ -213,7 +213,7 @@ function drawLeg(baseMatrix, sideOffset, frontOffset, upperKey, lowerKey, hoofKe
   hoof.rotate(effectiveAngle(hoofKey), 0, 0, 1);
   var hoofShape = matrixCopy(hoof);
   hoofShape.translate(0, -0.08, 0.06);
-  hoofShape.rotate(90, 0, 1, 0);
+  hoofShape.rotate(-90, 0, 1, 0);
   hoofShape.scale(0.2, 0.16, 0.3);
   drawCube(hoofShape, [0.16, 0.12, 0.10, 1.0]);
 }
