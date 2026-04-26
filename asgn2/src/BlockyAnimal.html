@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BlockyAnimal - Horse</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 12px; }
+    #controls { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 8px 16px; max-width: 960px; }
+    .control-row { display: flex; align-items: center; gap: 8px; }
+    .control-row label { width: 170px; font-size: 14px; }
+    #buttons { margin: 8px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+    #stats { margin-top: 8px; font-size: 14px; }
+  </style>
+</head>
+<body onload="main()">
+  <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
+  <p><strong>Animal:</strong> Horse. Shift-click canvas for poke animation. Drag mouse to rotate.</p>
+
+  <canvas id="webgl" width="700" height="500">
+    Please use a browser that supports "canvas"
+  </canvas>
+
+  <div id="buttons">
+    <button type="button" id="animOnBtn">Animation On</button>
+    <button type="button" id="animOffBtn">Animation Off</button>
+    <button type="button" id="resetPoseBtn">Reset Pose</button>
+  </div>
+
+  <div id="controls"></div>
+  <div id="stats">fps: -- | ms: --</div>
+
+  <script src="../lib/webgl-utils.js"></script>
+  <script src="../lib/cuon-utils.js"></script>
+  <script src="../lib/cuon-matrix-cse160.js"></script>
+  <script src="Cube.js"></script>
+  <script src="BlockyAnimal.js"></script>
+</body>
+</html>
