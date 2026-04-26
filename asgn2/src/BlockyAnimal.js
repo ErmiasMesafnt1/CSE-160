@@ -2,11 +2,11 @@ var VSHADER_SOURCE =
   'precision mediump float;\n' +
   'attribute vec4 a_Position;\n' +
   'uniform mat4 u_ModelMatrix;\n' +
-  'uniform mat4 u_GlobalRotateMatrix;\n' +
+  'uniform mat4 u_GlobalRotation;\n' +
   'uniform mat4 u_ViewMatrix;\n' +
   'uniform mat4 u_ProjectionMatrix;\n' +
   'void main() {\n' +
-  '  gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;\n' +
+  '  gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotation * u_ModelMatrix * a_Position;\n' +
   '}\n';
 
 var FSHADER_SOURCE =
@@ -21,7 +21,7 @@ var gl;
 var a_Position;
 var u_FragColor;
 var u_ModelMatrix;
-var u_GlobalRotateMatrix;
+var u_GlobalRotation;
 var u_ViewMatrix;
 var u_ProjectionMatrix;
 
@@ -30,7 +30,7 @@ var g_cubeVertexCount = 0;
 var g_pyramidBuffer = null;
 var g_pyramidVertexCount = 0;
 
-var g_globalAngle = 0;
+var gAnimalGlobalRotation = 0;
 var g_mouseXAngle = 12;
 var g_mouseYAngle = 18;
 var g_isDragging = false;
@@ -38,7 +38,7 @@ var g_lastMouseX = 0;
 var g_lastMouseY = 0;
 
 var g_startTime = performance.now() / 1000.0;
-var g_seconds = 0;
+var g_time = 0;
 var g_animationOn = true;
 var g_isPoking = false;
 var g_pokeStart = 0;
@@ -126,11 +126,11 @@ function connectVariablesToGLSL() {
   a_Position = gl.getAttribLocation(gl.program, 'a_Position');
   u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
   u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-  u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
+  u_GlobalRotation = gl.getUniformLocation(gl.program, 'u_GlobalRotation');
   u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
   u_ProjectionMatrix = gl.getUniformLocation(gl.program, 'u_ProjectionMatrix');
 
-  if (a_Position < 0 || !u_FragColor || !u_ModelMatrix || !u_GlobalRotateMatrix || !u_ViewMatrix || !u_ProjectionMatrix) {
+  if (a_Position < 0 || !u_FragColor || !u_ModelMatrix || !u_GlobalRotation || !u_ViewMatrix || !u_ProjectionMatrix) {
     console.log('Failed to get GLSL variable locations.');
     return false;
   }
@@ -164,8 +164,8 @@ function setCommonMatrices() {
 
   var global = new Matrix4();
   global.rotate(g_mouseYAngle, 1, 0, 0);
-  global.rotate(g_globalAngle + g_mouseXAngle, 0, 1, 0);
-  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, global.elements);
+  global.rotate(gAnimalGlobalRotation + g_mouseXAngle, 0, 1, 0);
+  gl.uniformMatrix4fv(u_GlobalRotation, false, global.elements);
 }
 
 function drawPyramid(modelMatrix, color) {
@@ -282,10 +282,10 @@ function renderHorse() {
   tail.scale(0.16, 0.85, 0.16);
   drawCube(tail, maneColor);
 
-  drawLeg(torsoFrame, 0.62, 0.32, 'frontLeftUpper', 'frontLeftLower', 'frontLeftHoof');
-  drawLeg(torsoFrame, 0.62, -0.32, 'frontRightUpper', 'frontRightLower', 'frontRightHoof');
-  drawLeg(torsoFrame, -0.62, 0.32, 'backLeftUpper', 'backLeftLower', 'backLeftHoof');
-  drawLeg(torsoFrame, -0.62, -0.32, 'backRightUpper', 'backRightLower', 'backRightHoof');
+  drawLeg(torsoFrame, 0.62, 0.32, 'frontRightUpper', 'frontRightLower', 'frontRightHoof');
+  drawLeg(torsoFrame, 0.62, -0.32, 'frontLeftUpper', 'frontLeftLower', 'frontLeftHoof');
+  drawLeg(torsoFrame, -0.62, 0.32, 'backRightUpper', 'backRightLower', 'backRightHoof');
+  drawLeg(torsoFrame, -0.62, -0.32, 'backLeftUpper', 'backLeftLower', 'backLeftHoof');
 }
 
 function renderGround() {
@@ -316,7 +316,7 @@ function updateAnimationAngles() {
     return;
   }
 
-  var t = g_seconds;
+  var t = g_time;
   var stepA = Math.sin(t * 6.0) * 24;
   var stepB = Math.sin(t * 6.0 + Math.PI) * 24;
 
@@ -372,7 +372,7 @@ function updatePerfUI() {
 }
 
 function tick() {
-  g_seconds = performance.now() / 1000.0 - g_startTime;
+  g_time = performance.now() / 1000.0 - g_startTime;
   updateAnimationAngles();
   renderScene();
   updatePerfUI();
@@ -402,7 +402,7 @@ function addSlider(parent, def) {
     var v = Number(slider.value);
     valueSpan.textContent = String(v);
     if (def.key === 'global') {
-      g_globalAngle = v;
+      gAnimalGlobalRotation = v;
     } else {
       g_jointAngles[def.key] = v;
     }
@@ -416,7 +416,7 @@ function addSlider(parent, def) {
 }
 
 function resetPose() {
-  g_globalAngle = 0;
+  gAnimalGlobalRotation = 0;
   for (var i = 0; i < g_sliderDefs.length; i++) {
     var def = g_sliderDefs[i];
     var slider = document.getElementById('slider_' + def.key);
@@ -427,7 +427,7 @@ function resetPose() {
     slider.value = String(def.value);
     valueSpan.textContent = String(def.value);
     if (def.key === 'global') {
-      g_globalAngle = def.value;
+      gAnimalGlobalRotation = def.value;
     } else {
       g_jointAngles[def.key] = def.value;
     }
@@ -453,14 +453,14 @@ function wireUI() {
 }
 
 function wireMouseControls() {
-  canvas.addEventListener('mousedown', function (ev) {
-    if (ev.shiftKey) {
+  canvas.addEventListener('mousedown', function (mouseEvent) {
+    if (mouseEvent.shiftKey) {
       g_isPoking = true;
-      g_pokeStart = g_seconds;
+      g_pokeStart = g_time;
     }
     g_isDragging = true;
-    g_lastMouseX = ev.clientX;
-    g_lastMouseY = ev.clientY;
+    g_lastMouseX = mouseEvent.clientX;
+    g_lastMouseY = mouseEvent.clientY;
   });
 
   canvas.addEventListener('mouseup', function () {
