@@ -12,7 +12,8 @@
 </head>
 <body onload="main()">
   <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
-  <p><strong>Notes to Grader:</strong> Entry point matches the tutorial layout (World.html / World.js / Camera.js / textures). <code>textures/uvgrid.png</code> is sampled on wall texture slot 0; <code>textures/sky.jpg</code> is sampled on the skybox (with a blue base-color mix). Point.js / Triangle.js / Circle.js are the same primitives from earlier assignments and are not wired into this WebGL program (the world uses the textured cube pipeline only).</p>
+  <p><strong>Notes to Grader:</strong> Rubric: flattened-cube ground (scaled thin cube, grass texture); large sky cube + <code>textures/sky.jpg</code>; walls use multiple textures including <code>textures/uvgrid.png</code> (slot 0); solid vertex colors on horse/crystals mixed with textured surfaces; WASD + Q/E + pointer-lock mouse; perspective <code>Camera</code>; 32×32 map with wall column heights 0–4; F/G add/remove blocks; crystal collection story; distance fog + batched wall draws + matrix pooling for performance (FPS readout below). Point/Triangle/Circle match the video file list but use the older 2D pipeline and are not linked to this shader.</p>
+  <p id="hudFps">FPS: —</p>
   <p id="hudCrystals">Crystals: 0 / 5</p>
   <p id="hudStory"></p>
 

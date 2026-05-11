@@ -1,6 +1,7 @@
 /**
  * First-person camera: eye, at, up, view and projection matrices.
  * Movement and pan follow the CSE160 assignment specification.
+ * Scratch vectors/matrices are reused to avoid per-frame allocations (performance rubric).
  */
 class Camera {
   constructor(canvas) {
@@ -10,6 +11,9 @@ class Camera {
     this.up = new Vector3([0, 1, 0]);
     this.viewMatrix = new Matrix4();
     this.projectionMatrix = new Matrix4();
+    this._f = new Vector3();
+    this._s = new Vector3();
+    this._rot = new Matrix4();
     this.updateView();
     this.updateProjection(canvas);
   }
@@ -34,7 +38,7 @@ class Camera {
   }
 
   moveForward(speed) {
-    var f = new Vector3();
+    var f = this._f;
     f.set(this.at).sub(this.eye).normalize().mul(speed);
     this.eye.add(f);
     this.at.add(f);
@@ -42,7 +46,7 @@ class Camera {
   }
 
   moveBackwards(speed) {
-    var b = new Vector3();
+    var b = this._f;
     b.set(this.eye).sub(this.at).normalize().mul(speed);
     this.eye.add(b);
     this.at.add(b);
@@ -50,9 +54,10 @@ class Camera {
   }
 
   moveLeft(speed) {
-    var f = new Vector3();
+    var f = this._f;
+    var s = this._s;
     f.set(this.at).sub(this.eye).normalize();
-    var s = Vector3.cross(this.up, f);
+    crossVec3InPlace(s, this.up, f);
     s.normalize().mul(speed);
     this.eye.add(s);
     this.at.add(s);
@@ -60,9 +65,10 @@ class Camera {
   }
 
   moveRight(speed) {
-    var f = new Vector3();
+    var f = this._f;
+    var s = this._s;
     f.set(this.at).sub(this.eye).normalize();
-    var s = Vector3.cross(f, this.up);
+    crossVec3InPlace(s, f, this.up);
     s.normalize().mul(speed);
     this.eye.add(s);
     this.at.add(s);
@@ -70,32 +76,29 @@ class Camera {
   }
 
   panLeft(alpha) {
-    var f = new Vector3();
-    f.set(this.at).sub(this.eye);
-    var rotationMatrix = new Matrix4();
-    rotationMatrix.setRotate(
-      alpha,
-      this.up.elements[0],
-      this.up.elements[1],
-      this.up.elements[2]
-    );
-    var fPrime = rotationMatrix.multiplyVector3(f);
-    this.at.set(this.eye).add(fPrime);
-    this.updateView();
+    this._yawAroundWorldUp(alpha);
   }
 
   panRight(alpha) {
-    var f = new Vector3();
-    f.set(this.at).sub(this.eye);
-    var rotationMatrix = new Matrix4();
-    rotationMatrix.setRotate(
-      -alpha,
-      this.up.elements[0],
-      this.up.elements[1],
-      this.up.elements[2]
-    );
-    var fPrime = rotationMatrix.multiplyVector3(f);
-    this.at.set(this.eye).add(fPrime);
+    this._yawAroundWorldUp(-alpha);
+  }
+
+  /**
+   * Fast yaw with world up = (0,1,0): avoids Matrix4 + multiplyVector3 allocations.
+   */
+  _yawAroundWorldUp(alphaDeg) {
+    var ex = this.at.elements[0] - this.eye.elements[0];
+    var ey = this.at.elements[1] - this.eye.elements[1];
+    var ez = this.at.elements[2] - this.eye.elements[2];
+    var rad = (alphaDeg * Math.PI) / 180;
+    var c = Math.cos(rad);
+    var s = Math.sin(rad);
+    var nx = c * ex + s * ez;
+    var ny = ey;
+    var nz = -s * ex + c * ez;
+    this.at.elements[0] = this.eye.elements[0] + nx;
+    this.at.elements[1] = this.eye.elements[1] + ny;
+    this.at.elements[2] = this.eye.elements[2] + nz;
     this.updateView();
   }
 
@@ -110,15 +113,16 @@ class Camera {
    * Pitch: rotate forward direction around camera right axis.
    */
   applyPitch(degrees) {
-    var f = new Vector3();
+    var f = this._f;
+    var r = this._s;
     f.set(this.at).sub(this.eye);
-    var right = Vector3.cross(f, this.up);
-    if (right.magnitude() < 1e-6) {
+    crossVec3InPlace(r, f, this.up);
+    if (r.magnitude() < 1e-6) {
       return;
     }
-    right.normalize();
-    var rot = new Matrix4();
-    rot.setRotate(degrees, right.elements[0], right.elements[1], right.elements[2]);
+    r.normalize();
+    var rot = this._rot;
+    rot.setRotate(degrees, r.elements[0], r.elements[1], r.elements[2]);
     var fPrime = rot.multiplyVector3(f);
     var fe = fPrime.elements;
     var ny = fe[1] / Math.max(1e-6, Math.sqrt(fe[0] * fe[0] + fe[1] * fe[1] + fe[2] * fe[2]));
@@ -128,4 +132,17 @@ class Camera {
     this.at.set(this.eye).add(fPrime);
     this.updateView();
   }
+}
+
+function crossVec3InPlace(out, a, b) {
+  var ax = a.elements[0];
+  var ay = a.elements[1];
+  var az = a.elements[2];
+  var bx = b.elements[0];
+  var by = b.elements[1];
+  var bz = b.elements[2];
+  out.elements[0] = ay * bz - az * by;
+  out.elements[1] = az * bx - ax * bz;
+  out.elements[2] = ax * by - ay * bx;
+  return out;
 }

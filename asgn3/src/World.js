@@ -4,17 +4,31 @@ var VSHADER_SOURCE =
   'uniform mat4 u_ModelMatrix;\n' +
   'uniform mat4 u_ViewMatrix;\n' +
   'uniform mat4 u_ProjectionMatrix;\n' +
+  'uniform vec3 u_CameraWorldPos;\n' +
+  'uniform float u_FogEnable;\n' +
   'varying vec2 v_UV;\n' +
+  'varying float v_FogDist;\n' +
   'void main() {\n' +
+  '  vec4 worldPos = u_ModelMatrix * a_Position;\n' +
   '  v_UV = a_UV;\n' +
-  '  gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_ModelMatrix * a_Position;\n' +
+  '  if (u_FogEnable > 0.5) {\n' +
+  '    vec3 d = worldPos.xyz - u_CameraWorldPos;\n' +
+  '    v_FogDist = length(d);\n' +
+  '  } else {\n' +
+  '    v_FogDist = 0.0;\n' +
+  '  }\n' +
+  '  gl_Position = u_ProjectionMatrix * u_ViewMatrix * worldPos;\n' +
   '}\n';
 
 var FSHADER_SOURCE =
   'precision mediump float;\n' +
   'varying vec2 v_UV;\n' +
+  'varying float v_FogDist;\n' +
   'uniform vec4 u_BaseColor;\n' +
   'uniform float u_texColorWeight;\n' +
+  'uniform float u_FogEnable;\n' +
+  'uniform float u_FogDistance;\n' +
+  'uniform vec3 u_FogColor;\n' +
   'uniform sampler2D u_Sampler0;\n' +
   'uniform sampler2D u_Sampler1;\n' +
   'uniform sampler2D u_Sampler2;\n' +
@@ -32,7 +46,12 @@ var FSHADER_SOURCE =
   '    texColor = texture2D(u_Sampler3, v_UV);\n' +
   '  }\n' +
   '  float t = u_texColorWeight;\n' +
-  '  gl_FragColor = (1.0 - t) * u_BaseColor + t * texColor;\n' +
+  '  vec4 lit = (1.0 - t) * u_BaseColor + t * texColor;\n' +
+  '  if (u_FogEnable > 0.5) {\n' +
+  '    float fogAmt = clamp(v_FogDist / u_FogDistance, 0.0, 1.0);\n' +
+  '    lit = mix(lit, vec4(u_FogColor, lit.a), fogAmt);\n' +
+  '  }\n' +
+  '  gl_FragColor = lit;\n' +
   '}\n';
 
 var canvas;
@@ -49,20 +68,21 @@ var u_Sampler0;
 var u_Sampler1;
 var u_Sampler2;
 var u_Sampler3;
+var u_CameraWorldPos;
+var u_FogEnable;
+var u_FogDistance;
+var u_FogColor;
 
 var camera;
 var g_textures = [];
 var g_texSkyFile = null;
 var g_wallBuffers = [null, null, null, null];
 var g_wallVertexCounts = [0, 0, 0, 0];
-var g_terrainBuffer = null;
-var g_terrainVertexCount = 0;
 
 var WORLD = 32;
 var MAX_STACK = 4;
 var g_map = [];
 var g_texMap = [];
-var g_terrainH = [];
 
 var g_keys = {};
 var g_mouseLocked = false;
@@ -99,6 +119,25 @@ var g_jointAngles = {
 var MOVE_SPEED = 0.12;
 var PAN_DEG_KEY = 2.8;
 
+var GROUND_Y_TOP = 0.0;
+var FOG_DISTANCE = 52.0;
+
+var g_matPool = [];
+var g_matPoolSize = 0;
+var g_matPoolNext = 0;
+var g_matIdentity = new Matrix4();
+var g_matGround = new Matrix4();
+var g_matSky = new Matrix4();
+var g_matCrystal = new Matrix4();
+var g_matHorseBase = new Matrix4();
+var g_vecForwardXZ = new Vector3();
+
+var g_perf = {
+  lastMs: performance.now(),
+  frames: 0,
+  fps: 0
+};
+
 function setupWebGL() {
   canvas = document.getElementById('webgl');
   gl = getWebGLContext(canvas);
@@ -128,6 +167,10 @@ function connectVariablesToGLSL() {
   u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
   u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2');
   u_Sampler3 = gl.getUniformLocation(gl.program, 'u_Sampler3');
+  u_CameraWorldPos = gl.getUniformLocation(gl.program, 'u_CameraWorldPos');
+  u_FogEnable = gl.getUniformLocation(gl.program, 'u_FogEnable');
+  u_FogDistance = gl.getUniformLocation(gl.program, 'u_FogDistance');
+  u_FogColor = gl.getUniformLocation(gl.program, 'u_FogColor');
   if (
     a_Position < 0 ||
     a_UV < 0 ||
@@ -140,7 +183,11 @@ function connectVariablesToGLSL() {
     !u_Sampler0 ||
     !u_Sampler1 ||
     !u_Sampler2 ||
-    !u_Sampler3
+    !u_Sampler3 ||
+    !u_CameraWorldPos ||
+    !u_FogEnable ||
+    !u_FogDistance ||
+    !u_FogColor
   ) {
     console.log('Failed to get GLSL variable locations.');
     return false;
@@ -307,41 +354,41 @@ function initPyramidBuffer() {
   g_pyramidVertexCount = 18;
 }
 
-function terrainHeightAt(gx, gz) {
-  var x = gx * 0.45;
-  var z = gz * 0.42;
-  return 0.22 * Math.sin(x) * Math.cos(z) + 0.14 * Math.sin(x * 2.1 + z * 0.7);
+function initMatPool(count) {
+  var i;
+  g_matPool.length = 0;
+  for (i = 0; i < count; i++) {
+    g_matPool.push(new Matrix4());
+  }
+  g_matPoolSize = count;
+  g_matPoolNext = 0;
 }
 
-function buildTerrainHeights() {
-  g_terrainH = [];
-  for (var z = 0; z <= WORLD; z++) {
-    var row = [];
-    for (var x = 0; x <= WORLD; x++) {
-      row.push(terrainHeightAt(x, z));
-    }
-    g_terrainH.push(row);
-  }
+function matPoolReset() {
+  g_matPoolNext = 0;
 }
 
-function rebuildTerrainBuffer() {
-  var arr = [];
-  for (var j = 0; j < WORLD; j++) {
-    for (var i = 0; i < WORLD; i++) {
-      var h00 = g_terrainH[j][i];
-      var h10 = g_terrainH[j][i + 1];
-      var h11 = g_terrainH[j + 1][i + 1];
-      var h01 = g_terrainH[j + 1][i];
-      appendTerrainCellQuad(arr, h00, h10, h11, h01, i, j);
-    }
+function matrixCopy(m) {
+  if (g_matPoolNext >= g_matPoolSize) {
+    g_matPool.push(new Matrix4());
+    g_matPoolSize++;
   }
-  var data = new Float32Array(arr);
-  if (!g_terrainBuffer) {
-    g_terrainBuffer = gl.createBuffer();
-  }
-  gl.bindBuffer(gl.ARRAY_BUFFER, g_terrainBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-  g_terrainVertexCount = data.length / g_cubeStride;
+  var out = g_matPool[g_matPoolNext++];
+  out.set(m);
+  return out;
+}
+
+function setCameraWorldUniform() {
+  gl.uniform3f(
+    u_CameraWorldPos,
+    camera.eye.elements[0],
+    camera.eye.elements[1],
+    camera.eye.elements[2]
+  );
+}
+
+function setFogEnabled(on) {
+  gl.uniform1f(u_FogEnable, on ? 1.0 : 0.0);
 }
 
 function rebuildWallMeshes() {
@@ -399,6 +446,12 @@ function proceduralMap() {
       if ((x + z * 3) % 11 === 0 && openPlaza === 0) {
         h = MAX_STACK;
       }
+      if (openPlaza === 0 && (x === 6 || x === 25) && z > 4 && z < 28) {
+        h = Math.max(h, 2);
+      }
+      if (openPlaza === 0 && (z === 6 || z === 25) && x > 4 && x < 28) {
+        h = Math.max(h, 2);
+      }
       row.push(Math.max(0, Math.min(MAX_STACK, h)));
       var tid = (x + z * 2) % 4;
       if (row[x] === 0) {
@@ -433,8 +486,7 @@ function drawBatchedWallTexture(texSlot) {
   if (!buf || n === 0) {
     return;
   }
-  var ident = new Matrix4();
-  gl.uniformMatrix4fv(u_ModelMatrix, false, ident.elements);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, g_matIdentity.elements);
   gl.uniform4f(u_BaseColor, 1, 1, 1, 1);
   gl.uniform1f(u_texColorWeight, 1.0);
   gl.uniform1i(u_TexIndex, texSlot);
@@ -443,26 +495,30 @@ function drawBatchedWallTexture(texSlot) {
   gl.drawArrays(gl.TRIANGLES, 0, n);
 }
 
-function drawTerrain() {
-  var m = new Matrix4();
-  gl.uniformMatrix4fv(u_ModelMatrix, false, m.elements);
+/**
+ * Rubric ground: one unit cube scaled into a thin slab (flattened cube) in the XZ plane.
+ */
+function drawGround() {
+  g_matGround.setTranslate(16, GROUND_Y_TOP - 0.07, 16);
+  g_matGround.scale(32, 0.14, 32);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, g_matGround.elements);
   gl.uniform4f(u_BaseColor, 1, 1, 1, 1);
   gl.uniform1f(u_texColorWeight, 1.0);
   gl.uniform1i(u_TexIndex, 1);
-  gl.bindBuffer(gl.ARRAY_BUFFER, g_terrainBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, g_unitCubeBuffer);
   bindInterleavedAttributes();
-  gl.drawArrays(gl.TRIANGLES, 0, g_terrainVertexCount);
+  gl.drawArrays(gl.TRIANGLES, 0, g_cubeVertexCount);
 }
 
 function drawSky() {
+  setFogEnabled(false);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.CULL_FACE);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g_texSkyFile);
-  var m = new Matrix4();
-  m.setTranslate(16, 8, 16);
-  m.scale(520, 520, 520);
-  gl.uniformMatrix4fv(u_ModelMatrix, false, m.elements);
+  g_matSky.setTranslate(16, 8, 16);
+  g_matSky.scale(520, 520, 520);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, g_matSky.elements);
   gl.uniform4f(u_BaseColor, 0.45, 0.65, 1.0, 1.0);
   gl.uniform1f(u_texColorWeight, 0.65);
   gl.uniform1i(u_TexIndex, 0);
@@ -473,6 +529,7 @@ function drawSky() {
   gl.bindTexture(gl.TEXTURE_2D, g_textures[0]);
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
+  setFogEnabled(true);
 }
 
 function drawColoredCube(modelMatrix, rgba) {
@@ -483,10 +540,6 @@ function drawColoredCube(modelMatrix, rgba) {
   gl.bindBuffer(gl.ARRAY_BUFFER, g_unitCubeBuffer);
   bindInterleavedAttributes();
   gl.drawArrays(gl.TRIANGLES, 0, g_cubeVertexCount);
-}
-
-function matrixCopy(m) {
-  return new Matrix4(m);
 }
 
 function effectiveAngle(key) {
@@ -645,16 +698,15 @@ function drawCrystals() {
     if (c.taken) {
       continue;
     }
-    var m = new Matrix4();
-    m.setTranslate(c.x + 0.5, 1.1 + 0.08 * Math.sin(g_time * 3 + i), c.z + 0.5);
-    m.rotate(g_time * 40 + i * 20, 0, 1, 0);
-    m.scale(0.35, 0.55, 0.35);
-    drawColoredCube(m, [0.2, 0.85, 1.0, 1.0]);
+    g_matCrystal.setTranslate(c.x + 0.5, 1.1 + 0.08 * Math.sin(g_time * 3 + i), c.z + 0.5);
+    g_matCrystal.rotate(g_time * 40 + i * 20, 0, 1, 0);
+    g_matCrystal.scale(0.35, 0.55, 0.35);
+    drawColoredCube(g_matCrystal, [0.2, 0.85, 1.0, 1.0]);
   }
 }
 
 function getForwardXZ() {
-  var f = new Vector3();
+  var f = g_vecForwardXZ;
   f.set(camera.at).sub(camera.eye);
   f.elements[1] = 0;
   if (f.magnitude() < 1e-4) {
@@ -723,21 +775,24 @@ function renderScene() {
   gl.useProgram(gl.program);
   gl.uniformMatrix4fv(u_ViewMatrix, false, camera.viewMatrix.elements);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, camera.projectionMatrix.elements);
+  gl.uniform1f(u_FogDistance, FOG_DISTANCE);
+  gl.uniform3f(u_FogColor, 0.52, 0.6, 0.72);
+  setCameraWorldUniform();
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  matPoolReset();
   drawSky();
-  drawTerrain();
+  drawGround();
   var t;
   for (t = 0; t < 4; t++) {
     drawBatchedWallTexture(t);
   }
   drawCrystals();
 
-  var horseBase = new Matrix4();
-  horseBase.translate(16, terrainHeightAtWorld(16, 22) + 0.02, 22);
-  horseBase.rotate(-35, 0, 1, 0);
-  renderHorse(horseBase);
+  g_matHorseBase.setTranslate(16, GROUND_Y_TOP + 0.02, 22);
+  g_matHorseBase.rotate(-35, 0, 1, 0);
+  renderHorse(g_matHorseBase);
 }
 
 function updateStoryHud() {
@@ -759,37 +814,11 @@ function updateStoryHud() {
   }
 }
 
-function terrainHeightAtWorld(wx, wz) {
-  var ix = Math.floor(wx);
-  var iz = Math.floor(wz);
-  if (ix < 0) {
-    ix = 0;
-  }
-  if (iz < 0) {
-    iz = 0;
-  }
-  if (ix >= WORLD) {
-    ix = WORLD - 1;
-  }
-  if (iz >= WORLD) {
-    iz = WORLD - 1;
-  }
-  var h00 = g_terrainH[iz][ix];
-  var h10 = g_terrainH[iz][ix + 1];
-  var h01 = g_terrainH[iz + 1][ix];
-  var h11 = g_terrainH[iz + 1][ix + 1];
-  var fx = wx - ix;
-  var fz = wz - iz;
-  var h0 = h00 * (1 - fx) + h10 * fx;
-  var h1 = h01 * (1 - fx) + h11 * fx;
-  return h0 * (1 - fz) + h1 * fz;
-}
-
 function clampCameraAboveGround() {
   var ex = camera.eye.elements[0];
   var ey = camera.eye.elements[1];
   var ez = camera.eye.elements[2];
-  var minY = terrainHeightAtWorld(ex, ez) + 1.5;
+  var minY = GROUND_Y_TOP + 1.5;
   if (ey < minY) {
     var lift = minY - ey;
     camera.eye.elements[1] += lift;
@@ -819,6 +848,21 @@ function processHeldKeys() {
   }
 }
 
+function updateFpsHud() {
+  g_perf.frames += 1;
+  var now = performance.now();
+  var dt = now - g_perf.lastMs;
+  if (dt >= 500) {
+    g_perf.fps = (g_perf.frames * 1000) / dt;
+    g_perf.frames = 0;
+    g_perf.lastMs = now;
+    var el = document.getElementById('hudFps');
+    if (el) {
+      el.textContent = 'FPS: ' + g_perf.fps.toFixed(1) + ' (rubric: 10+ target)';
+    }
+  }
+}
+
 function tick() {
   g_time = performance.now() / 1000 - g_startTime;
   processHeldKeys();
@@ -826,6 +870,7 @@ function tick() {
   updateHorseAnimation();
   updateCrystals();
   updateStoryHud();
+  updateFpsHud();
   renderScene();
   requestAnimationFrame(tick);
 }
@@ -876,10 +921,14 @@ function initStaticCubeBuffers() {
 }
 
 function startWorldApp() {
+  initMatPool(64);
   initPyramidBuffer();
   placeCrystals();
   wireInput();
   gl.clearColor(0.08, 0.1, 0.14, 1.0);
+  gl.useProgram(gl.program);
+  gl.uniform1f(u_FogDistance, FOG_DISTANCE);
+  gl.uniform3f(u_FogColor, 0.52, 0.6, 0.72);
   updateStoryHud();
   renderScene();
   requestAnimationFrame(tick);
@@ -895,8 +944,6 @@ function main() {
 
   camera = new Camera(canvas);
   proceduralMap();
-  buildTerrainHeights();
-  rebuildTerrainBuffer();
   rebuildWallMeshes();
   initStaticCubeBuffers();
   initCanvasWallTextures();
