@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>World — First Person Voxel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 12px; max-width: 900px; }
+    #hudStory { margin: 8px 0; line-height: 1.45; }
+    #hudCrystals { font-weight: bold; margin-bottom: 6px; }
+    canvas { display: block; border: 1px solid #333; cursor: crosshair; }
+  </style>
+</head>
+<body onload="main()">
+  <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
+  <p><strong>Notes to Grader:</strong> Entry point matches the tutorial layout (World.html / World.js / Camera.js / textures). <code>textures/uvgrid.png</code> is sampled on wall texture slot 0; <code>textures/sky.jpg</code> is sampled on the skybox (with a blue base-color mix). Point.js / Triangle.js / Circle.js are the same primitives from earlier assignments and are not wired into this WebGL program (the world uses the textured cube pipeline only).</p>
+  <p id="hudCrystals">Crystals: 0 / 5</p>
+  <p id="hudStory"></p>
+
+  <canvas id="webgl" width="800" height="600">
+    Please use a browser that supports "canvas"
+  </canvas>
+
+  <p style="font-size: 14px; margin-top: 10px;">
+    <strong>Controls:</strong> WASD move &nbsp; Q / E turn &nbsp; Mouse (after click lock) look &nbsp; F add block &nbsp; G remove block.
+    Serve this folder over HTTP (Live Preview or <code>python3 -m http.server</code>) so <code>../textures/*.jpg|png</code> load.
+  </p>
+
+  <script src="../lib/webgl-utils.js"></script>
+  <script src="../lib/cuon-utils.js"></script>
+  <script src="../lib/cuon-matrix-cse160.js"></script>
+  <script src="Vector.js"></script>
+  <script src="Point.js"></script>
+  <script src="Triangle.js"></script>
+  <script src="Circle.js"></script>
+  <script src="Camera.js"></script>
+  <script src="Cube.js"></script>
+  <script src="World.js"></script>
+</body>
+</html>
