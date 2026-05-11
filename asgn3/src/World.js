@@ -76,6 +76,8 @@ var g_wallBuffers = [null, null, null, null];
 var g_wallVertexCounts = [0, 0, 0, 0];
 
 var WORLD = 32;
+/** Geometric center of the play area [0, WORLD] (same as 32/2 for default world). */
+var WORLD_CENTER_XZ = WORLD * 0.5;
 var MAX_STACK = 4;
 var g_map = [];
 var g_texMap = [];
@@ -503,6 +505,25 @@ function proceduralMap() {
       }
     }
   }
+  clearFlatPatchAroundWorldCenter(3);
+}
+
+/** Flat open ground at world middle so the animal is never embedded in voxels. */
+function clearFlatPatchAroundWorldCenter(halfSize) {
+  var c = Math.floor(WORLD_CENTER_XZ);
+  var dz;
+  var dx;
+  for (dz = -halfSize; dz <= halfSize; dz++) {
+    for (dx = -halfSize; dx <= halfSize; dx++) {
+      var xi = c + dx;
+      var zi = c + dz;
+      if (xi <= 0 || zi <= 0 || xi >= WORLD - 1 || zi >= WORLD - 1) {
+        continue;
+      }
+      g_map[zi][xi] = 0;
+      g_texMap[zi][xi] = 1;
+    }
+  }
 }
 
 function bindInterleavedAttributes() {
@@ -823,7 +844,7 @@ function renderScene() {
   }
   drawCrystals();
 
-  g_matHorseBase.setTranslate(16, GROUND_Y_TOP + 0.02, 22);
+  g_matHorseBase.setTranslate(WORLD_CENTER_XZ, GROUND_Y_TOP + 0.02, WORLD_CENTER_XZ);
   g_matHorseBase.rotate(-35, 0, 1, 0);
   renderHorse(g_matHorseBase);
 }
