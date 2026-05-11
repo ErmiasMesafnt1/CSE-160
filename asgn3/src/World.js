@@ -11,12 +11,8 @@ var VSHADER_SOURCE =
   'void main() {\n' +
   '  vec4 worldPos = u_ModelMatrix * a_Position;\n' +
   '  v_UV = a_UV;\n' +
-  '  if (u_FogEnable > 0.5) {\n' +
-  '    vec3 d = worldPos.xyz - u_CameraWorldPos;\n' +
-  '    v_FogDist = length(d);\n' +
-  '  } else {\n' +
-  '    v_FogDist = 0.0;\n' +
-  '  }\n' +
+  '  vec3 d = worldPos.xyz - u_CameraWorldPos;\n' +
+  '  v_FogDist = length(d);\n' +
   '  gl_Position = u_ProjectionMatrix * u_ViewMatrix * worldPos;\n' +
   '}\n';
 
@@ -153,6 +149,11 @@ function setupWebGL() {
 function connectVariablesToGLSL() {
   if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
     console.log('Failed to initialize shaders.');
+    var hud = document.getElementById('hudStory');
+    if (hud) {
+      hud.textContent =
+        'WebGL shader failed to compile or link. Open the browser developer console (F12) for details.';
+    }
     return false;
   }
   a_Position = gl.getAttribLocation(gl.program, 'a_Position');
@@ -291,39 +292,71 @@ function initCanvasWallTextures() {
   }, 256);
 }
 
-function loadWorldTexturesThen(startFn) {
-  var TEX_BASE = '../textures/';
-  var pending = 2;
-  function tryStart() {
-    pending -= 1;
-    if (pending !== 0) {
-      return;
+function makeFallbackUvGridTexture() {
+  return makePowerOfTwoTextureFromCanvas(function (ctx, s) {
+    var cell = s / 8;
+    var x;
+    var y;
+    for (y = 0; y < 8; y++) {
+      for (x = 0; x < 8; x++) {
+        ctx.fillStyle = (x + y) % 2 === 0 ? '#c44' : '#4a8';
+        ctx.fillRect(x * cell, y * cell, cell, cell);
+      }
     }
-    if (!g_textures[0]) {
-      g_textures[0] = makePowerOfTwoTextureFromCanvas(function (ctx, s) {
-        ctx.fillStyle = '#8b5a3c';
-        ctx.fillRect(0, 0, s, s);
-      }, 256);
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 2;
+    for (x = 0; x <= 8; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * cell, 0);
+      ctx.lineTo(x * cell, s);
+      ctx.stroke();
     }
-    if (!g_texSkyFile) {
-      g_texSkyFile = makePowerOfTwoTextureFromCanvas(function (ctx, s) {
-        var g = ctx.createLinearGradient(0, 0, 0, s);
-        g.addColorStop(0, '#87ceeb');
-        g.addColorStop(1, '#1e5a9e');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, s, s);
-      }, 256);
+    for (y = 0; y <= 8; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y * cell);
+      ctx.lineTo(s, y * cell);
+      ctx.stroke();
     }
-    bindTextureUnitsToSamplers();
-    startFn();
+  }, 256);
+}
+
+function makeFallbackSkyTexture() {
+  return makePowerOfTwoTextureFromCanvas(function (ctx, s) {
+    var g = ctx.createLinearGradient(0, 0, 0, s);
+    g.addColorStop(0, '#87ceeb');
+    g.addColorStop(1, '#1e5a9e');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, s, s);
+  }, 256);
+}
+
+/**
+ * Always have valid textures so the scene runs even if ../textures/*.png never load
+ * (Live Preview, ad blockers, or wrong server root would otherwise hang forever).
+ */
+function ensureGpuTexturesReady() {
+  if (!g_textures[0]) {
+    g_textures[0] = makeFallbackUvGridTexture();
   }
+  if (!g_texSkyFile) {
+    g_texSkyFile = makeFallbackSkyTexture();
+  }
+  bindTextureUnitsToSamplers();
+}
+
+function upgradeWallAndSkyTexturesFromFiles() {
+  var TEX_BASE = '../textures/';
   loadImageTexture(TEX_BASE + 'uvgrid.png', gl.REPEAT, gl.REPEAT, function (tex) {
-    g_textures[0] = tex;
-    tryStart();
+    if (tex) {
+      g_textures[0] = tex;
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, g_textures[0]);
+    }
   });
   loadImageTexture(TEX_BASE + 'sky.jpg', gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE, function (tex) {
-    g_texSkyFile = tex;
-    tryStart();
+    if (tex) {
+      g_texSkyFile = tex;
+    }
   });
 }
 
@@ -852,11 +885,14 @@ function updateFpsHud() {
   g_perf.frames += 1;
   var now = performance.now();
   var dt = now - g_perf.lastMs;
+  var el = document.getElementById('hudFps');
+  if (el && g_perf.frames === 1) {
+    el.textContent = 'FPS: … (measuring)';
+  }
   if (dt >= 500) {
     g_perf.fps = (g_perf.frames * 1000) / dt;
     g_perf.frames = 0;
     g_perf.lastMs = now;
-    var el = document.getElementById('hudFps');
     if (el) {
       el.textContent = 'FPS: ' + g_perf.fps.toFixed(1) + ' (rubric: 10+ target)';
     }
@@ -947,5 +983,7 @@ function main() {
   rebuildWallMeshes();
   initStaticCubeBuffers();
   initCanvasWallTextures();
-  loadWorldTexturesThen(startWorldApp);
+  ensureGpuTexturesReady();
+  upgradeWallAndSkyTexturesFromFiles();
+  startWorldApp();
 }
