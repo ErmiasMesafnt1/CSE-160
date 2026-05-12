@@ -150,7 +150,9 @@ function setupWebGL() {
     return false;
   }
   gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.CULL_FACE);
+  /* Face culling interacts badly with some MVP + cube winding combos (half of each
+     quad vanishes). Depth test is enough for this scene; leave culling off. */
+  gl.disable(gl.CULL_FACE);
   return true;
 }
 
@@ -817,7 +819,6 @@ function drawGround() {
 function drawSky() {
   setFogEnabled(false);
   gl.disable(gl.DEPTH_TEST);
-  gl.disable(gl.CULL_FACE);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g_texSkyFile);
   g_matSky.setTranslate(16, 8, 16);
@@ -832,7 +833,6 @@ function drawSky() {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g_textures[0]);
   gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.CULL_FACE);
   setFogEnabled(true);
 }
 
