@@ -12,7 +12,7 @@
 </head>
 <body onload="main()">
   <p><strong>Name:</strong> Ermias Mesafnt &nbsp; <strong>UCSC Email:</strong> emesafnt@ucsc.edu</p>
-  <p><strong>Notes to Grader:</strong> Rubric: flattened-cube ground (scaled thin cube, grass texture); large sky cube + <code>textures/sky.jpg</code>; walls use multiple textures including <code>textures/cobble_paving.png</code> (slot 0, cobble / paving); solid vertex colors on horse/crystals mixed with textured surfaces; WASD + Q/E + pointer-lock mouse; perspective <code>Camera</code>; 32×32 map with wall column heights 0–4; F/G add/remove blocks; crystal collection story; distance fog + batched wall draws + matrix pooling for performance (FPS readout below). Point/Triangle/Circle match the video file list but use the older 2D pipeline and are not linked to this shader.</p>
+  <p><strong>Notes to Grader:</strong> Story — &quot;Crystal Plain&quot;: explore the maze, find five cyan crystals, and touch them. WASD move, Q/E or mouse look, F place block, G remove block.</p>
   <p id="hudFps">FPS: —</p>
   <p id="hudCrystals">Crystals: 0 / 5</p>
   <p id="hudStory"></p>
@@ -22,8 +22,7 @@
   </canvas>
 
   <p style="font-size: 14px; margin-top: 10px;">
-    <strong>Controls:</strong> WASD move &nbsp; Q / E turn &nbsp; Mouse (after click lock) look &nbsp; F add block &nbsp; G remove block.
-    Serve the <strong>asgn3</strong> folder over HTTP. Textures live in <code>../textures/</code> (see <code>textures/WHERE_TO_FIND_TEXTURES.txt</code>). Regenerate simple block PNGs with <code>python3 make_block_textures.py</code> from the <code>asgn3</code> folder.
+    Serve the <strong>asgn3</strong> folder over HTTP (Live Preview or <code>cd asgn3 &amp;&amp; python3 -m http.server</code>) so <code>../textures/</code> can load.
   </p>
 
   <script src="../lib/webgl-utils.js"></script>

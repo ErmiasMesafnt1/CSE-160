@@ -1097,10 +1097,6 @@ function updateStoryHud() {
   if (g_storyComplete) {
     el.textContent =
       'The herd is safe: you returned all sky-crystals to the plains. The horse bows in thanks.';
-  } else {
-    el.textContent =
-      'Story — "Crystal Plain": explore the maze, find five cyan crystals, and touch them. ' +
-      'WASD move, Q/E or mouse look, F place block, G remove block.';
   }
   var c = document.getElementById('hudCrystals');
   if (c) {
@@ -1147,15 +1143,12 @@ function updateFpsHud() {
   var now = performance.now();
   var dt = now - g_perf.lastMs;
   var el = document.getElementById('hudFps');
-  if (el && g_perf.frames === 1) {
-    el.textContent = 'FPS: … (measuring)';
-  }
   if (dt >= 500) {
     g_perf.fps = (g_perf.frames * 1000) / dt;
     g_perf.frames = 0;
     g_perf.lastMs = now;
     if (el) {
-      el.textContent = 'FPS: ' + g_perf.fps.toFixed(1) + ' (rubric: 10+ target)';
+      el.textContent = 'FPS: ' + g_perf.fps.toFixed(1);
     }
   }
 }
