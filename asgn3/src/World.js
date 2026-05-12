@@ -76,11 +76,10 @@ var g_wallBuffers = [null, null, null, null];
 var g_wallVertexCounts = [0, 0, 0, 0];
 
 var WORLD = 32;
-/** Geometric center of the play area [0, WORLD] (same as 32/2 for default world). */
 var WORLD_CENTER_XZ = WORLD * 0.5;
 var MAX_STACK = 4;
-var g_map = [];
-var g_texMap = [];
+var map = [];
+var texMap = [];
 
 var g_keys = {};
 var g_mouseLocked = false;
@@ -119,11 +118,6 @@ var PAN_DEG_KEY = 2.8;
 
 var GROUND_Y_TOP = 0.0;
 var FOG_DISTANCE = 52.0;
-/**
- * The BlockyAnimal mesh was tuned with the ground plane near y = -1.1 while the
- * horse root stayed at the origin, so hooves extend roughly this far below the
- * root matrix. Lift the whole rig so feet sit on GROUND_Y_TOP.
- */
 var HORSE_ROOT_Y = 1.12;
 
 var g_matPool = [];
@@ -150,8 +144,6 @@ function setupWebGL() {
     return false;
   }
   gl.enable(gl.DEPTH_TEST);
-  /* Face culling interacts badly with some MVP + cube winding combos (half of each
-     quad vanishes). Depth test is enough for this scene; leave culling off. */
   gl.disable(gl.CULL_FACE);
   return true;
 }
@@ -225,9 +217,6 @@ function makePowerOfTwoTextureFromCanvas(drawFn, size) {
   return tex;
 }
 
-/**
- * Load a square power-of-two image from the server (same pattern as Matsuda loadTexture).
- */
 function loadImageTexture(url, wrapS, wrapT, onLoad) {
   var image = new Image();
   image.onload = function () {
@@ -327,10 +316,6 @@ function makeFallbackSkyTexture() {
   }, 256);
 }
 
-/**
- * Always have valid textures so the scene runs even if ../textures/*.png never load
- * (Live Preview, ad blockers, or wrong server root would otherwise hang forever).
- */
 function ensureGpuTexturesReady() {
   if (!g_textures[0]) {
     g_textures[0] = makeFallbackUvGridTexture();
@@ -455,8 +440,8 @@ function rebuildWallMeshes() {
   var tid;
   for (z = 0; z < WORLD; z++) {
     for (x = 0; x < WORLD; x++) {
-      h = g_map[z][x];
-      tid = g_texMap[z][x];
+      h = map[z][x];
+      tid = texMap[z][x];
       if (tid < 0 || tid > 3) {
         tid = 0;
       }
@@ -491,18 +476,14 @@ function shuffleIntPairs(pairs) {
   }
 }
 
-/**
- * Perfect maze on odd grid cells (recursive backtracker), then border + openings.
- * Corridors are height 0; uncarved interior stays short walls (2–4) for rubric variety.
- */
 function generateMazeInterior() {
   var x;
   var z;
   for (z = 1; z <= WORLD - 2; z++) {
     for (x = 1; x <= WORLD - 2; x++) {
       var h = 2 + ((x * 3 + z * 5) % 3);
-      g_map[z][x] = h;
-      g_texMap[z][x] = (x + z * 2) % 4;
+      map[z][x] = h;
+      texMap[z][x] = (x + z * 2) % 4;
     }
   }
 
@@ -519,8 +500,8 @@ function generateMazeInterior() {
   var stack = [];
   stack.push([sx, sz]);
   visited[sz][sx] = true;
-  g_map[sz][sx] = 0;
-  g_texMap[sz][sx] = 1;
+  map[sz][sx] = 0;
+  texMap[sz][sx] = 1;
 
   var dirs = [
     [2, 0],
@@ -556,34 +537,33 @@ function generateMazeInterior() {
       var mx = pick[2];
       var mz = pick[3];
       visited[nz][nx] = true;
-      g_map[nz][nx] = 0;
-      g_texMap[nz][nx] = 1;
-      g_map[mz][mx] = 0;
-      g_texMap[mz][mx] = 1;
+      map[nz][nx] = 0;
+      texMap[nz][nx] = 1;
+      map[mz][mx] = 0;
+      texMap[mz][mx] = 1;
       stack.push([nx, nz]);
     }
   }
 }
 
-/** Widen a few straight runs so movement feels less tight than single-cell only. */
 function widenRandomCorridors() {
   var passes = 18;
   var p;
   for (p = 0; p < passes; p++) {
     var x = 2 + Math.floor(Math.random() * (WORLD - 4));
     var z = 2 + Math.floor(Math.random() * (WORLD - 4));
-    if (g_map[z][x] !== 0) {
+    if (map[z][x] !== 0) {
       continue;
     }
     if (Math.random() < 0.5) {
-      if (x + 1 < WORLD - 1 && g_map[z][x + 1] > 0) {
-        g_map[z][x + 1] = 0;
-        g_texMap[z][x + 1] = 1;
+      if (x + 1 < WORLD - 1 && map[z][x + 1] > 0) {
+        map[z][x + 1] = 0;
+        texMap[z][x + 1] = 1;
       }
     } else {
-      if (z + 1 < WORLD - 1 && g_map[z + 1][x] > 0) {
-        g_map[z + 1][x] = 0;
-        g_texMap[z + 1][x] = 1;
+      if (z + 1 < WORLD - 1 && map[z + 1][x] > 0) {
+        map[z + 1][x] = 0;
+        texMap[z + 1][x] = 1;
       }
     }
   }
@@ -595,21 +575,21 @@ function punchBorderEntrances() {
   var k;
   for (k = -w; k <= w; k++) {
     if (mid + k >= 1 && mid + k <= WORLD - 2) {
-      g_map[1][mid + k] = 0;
-      g_texMap[1][mid + k] = 1;
-      g_map[WORLD - 2][mid + k] = 0;
-      g_texMap[WORLD - 2][mid + k] = 1;
-      g_map[mid + k][1] = 0;
-      g_texMap[mid + k][1] = 1;
-      g_map[mid + k][WORLD - 2] = 0;
-      g_texMap[mid + k][WORLD - 2] = 1;
+      map[1][mid + k] = 0;
+      texMap[1][mid + k] = 1;
+      map[WORLD - 2][mid + k] = 0;
+      texMap[WORLD - 2][mid + k] = 1;
+      map[mid + k][1] = 0;
+      texMap[mid + k][1] = 1;
+      map[mid + k][WORLD - 2] = 0;
+      texMap[mid + k][WORLD - 2] = 1;
     }
   }
 }
 
 function proceduralMap() {
-  g_map = [];
-  g_texMap = [];
+  map = [];
+  texMap = [];
   var z;
   var x;
   for (z = 0; z < WORLD; z++) {
@@ -619,8 +599,8 @@ function proceduralMap() {
       row.push(0);
       trow.push(0);
     }
-    g_map.push(row);
-    g_texMap.push(trow);
+    map.push(row);
+    texMap.push(trow);
   }
 
   generateMazeInterior();
@@ -629,8 +609,8 @@ function proceduralMap() {
   for (z = 0; z < WORLD; z++) {
     for (x = 0; x < WORLD; x++) {
       if (x === 0 || z === 0 || x === WORLD - 1 || z === WORLD - 1) {
-        g_map[z][x] = MAX_STACK;
-        g_texMap[z][x] = 2;
+        map[z][x] = MAX_STACK;
+        texMap[z][x] = 2;
       }
     }
   }
@@ -639,7 +619,6 @@ function proceduralMap() {
   placeCrystalsOnOpenCells();
 }
 
-/** Flat open ground at world middle so the animal is never embedded in voxels. */
 function clearFlatPatchAroundWorldCenter(halfSize) {
   var c = Math.floor(WORLD_CENTER_XZ);
   var dz;
@@ -651,31 +630,31 @@ function clearFlatPatchAroundWorldCenter(halfSize) {
       if (xi <= 0 || zi <= 0 || xi >= WORLD - 1 || zi >= WORLD - 1) {
         continue;
       }
-      g_map[zi][xi] = 0;
-      g_texMap[zi][xi] = 1;
+      map[zi][xi] = 0;
+      texMap[zi][xi] = 1;
     }
   }
 }
 
 function countOpenCardinals(x, z) {
   var n = 0;
-  if (x + 1 <= WORLD - 2 && g_map[z][x + 1] === 0) {
+  if (x + 1 <= WORLD - 2 && map[z][x + 1] === 0) {
     n++;
   }
-  if (x - 1 >= 1 && g_map[z][x - 1] === 0) {
+  if (x - 1 >= 1 && map[z][x - 1] === 0) {
     n++;
   }
-  if (z + 1 <= WORLD - 2 && g_map[z + 1][x] === 0) {
+  if (z + 1 <= WORLD - 2 && map[z + 1][x] === 0) {
     n++;
   }
-  if (z - 1 >= 1 && g_map[z - 1][x] === 0) {
+  if (z - 1 >= 1 && map[z - 1][x] === 0) {
     n++;
   }
   return n;
 }
 
 function isCrystalCandidateCell(x, z, minOpenCardinals) {
-  if (g_map[z][x] !== 0) {
+  if (map[z][x] !== 0) {
     return false;
   }
   if (x <= 1 || z <= 1 || x >= WORLD - 2 || z >= WORLD - 2) {
@@ -757,7 +736,7 @@ function placeCrystalsOnOpenCells() {
   var open = [];
   for (z = 2; z <= WORLD - 3; z++) {
     for (x = 2; x <= WORLD - 3; x++) {
-      if (g_map[z][x] === 0 && (Math.abs(x - c) > 3 || Math.abs(z - c) > 3)) {
+      if (map[z][x] === 0 && (Math.abs(x - c) > 3 || Math.abs(z - c) > 3)) {
         open.push({ x: x, z: z });
       }
     }
@@ -801,9 +780,6 @@ function drawBatchedWallTexture(texSlot) {
   gl.drawArrays(gl.TRIANGLES, 0, n);
 }
 
-/**
- * Rubric ground: one unit cube scaled into a thin slab (flattened cube) in the XZ plane.
- */
 function drawGround() {
   g_matGround.setTranslate(16, GROUND_Y_TOP - 0.07, 16);
   g_matGround.scale(32, 0.14, 32);
@@ -819,6 +795,8 @@ function drawGround() {
 function drawSky() {
   setFogEnabled(false);
   gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g_texSkyFile);
   g_matSky.setTranslate(16, 8, 16);
@@ -830,6 +808,7 @@ function drawSky() {
   gl.bindBuffer(gl.ARRAY_BUFFER, g_skyCubeBuffer);
   bindInterleavedAttributes();
   gl.drawArrays(gl.TRIANGLES, 0, g_cubeVertexCount);
+  gl.disable(gl.CULL_FACE);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, g_textures[0]);
   gl.enable(gl.DEPTH_TEST);
@@ -1030,12 +1009,12 @@ function tryPlaceBlock() {
   if (!cell) {
     return;
   }
-  var h = g_map[cell.cz][cell.cx];
+  var h = map[cell.cz][cell.cx];
   if (h >= MAX_STACK) {
     return;
   }
-  g_map[cell.cz][cell.cx] = h + 1;
-  g_texMap[cell.cz][cell.cx] = 0;
+  map[cell.cz][cell.cx] = h + 1;
+  texMap[cell.cz][cell.cx] = 0;
   rebuildWallMeshes();
 }
 
@@ -1044,11 +1023,11 @@ function tryRemoveBlock() {
   if (!cell) {
     return;
   }
-  var h = g_map[cell.cz][cell.cx];
+  var h = map[cell.cz][cell.cx];
   if (h <= 0) {
     return;
   }
-  g_map[cell.cz][cell.cx] = h - 1;
+  map[cell.cz][cell.cx] = h - 1;
   rebuildWallMeshes();
 }
 
@@ -1204,7 +1183,7 @@ function initStaticCubeBuffers() {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(unit), gl.STATIC_DRAW);
 
   var sky = [];
-  appendUnitCubeWithUV(sky, 0, 0, 0);
+  appendUnitCubeSkyInteriorWithUV(sky, 0, 0, 0);
   g_skyCubeBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, g_skyCubeBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sky), gl.STATIC_DRAW);

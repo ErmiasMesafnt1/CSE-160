@@ -1,8 +1,3 @@
-/**
- * First-person camera: eye, at, up, view and projection matrices.
- * Movement and pan follow the CSE160 assignment specification.
- * Scratch vectors/matrices are reused to avoid per-frame allocations (performance rubric).
- */
 class Camera {
   constructor(canvas) {
     this.fov = 60;
@@ -83,9 +78,6 @@ class Camera {
     this._yawAroundWorldUp(-alpha);
   }
 
-  /**
-   * Fast yaw with world up = (0,1,0): avoids Matrix4 + multiplyVector3 allocations.
-   */
   _yawAroundWorldUp(alphaDeg) {
     var ex = this.at.elements[0] - this.eye.elements[0];
     var ey = this.at.elements[1] - this.eye.elements[1];
@@ -102,16 +94,10 @@ class Camera {
     this.updateView();
   }
 
-  /**
-   * Mouse look: yaw around world up (same sense as E / panRight with positive key step).
-   */
   applyYaw(degrees) {
     this.panRight(degrees);
   }
 
-  /**
-   * Pitch: rotate forward direction around camera right axis.
-   */
   applyPitch(degrees) {
     var f = this._f;
     var r = this._s;

@@ -1,8 +1,3 @@
-/**
- * Lightweight 3-vector helpers for early tutorials. This world scene uses
- * cuon-matrix-cse160.js (Vector3 / Matrix4) for the camera and transforms.
- * This file is kept so the project layout matches the course video modules.
- */
 function vec3FromValues(x, y, z) {
   return [x, y, z];
 }
