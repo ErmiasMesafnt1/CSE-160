@@ -1075,7 +1075,7 @@ function updateStoryHud() {
   }
   if (g_storyComplete) {
     el.textContent =
-      'The herd is safe: you returned all sky-crystals to the plains. The horse bows in thanks.';
+      'All crystals found! You Won!';
   }
   var c = document.getElementById('hudCrystals');
   if (c) {
